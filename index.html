@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GhostChat</title>
+<title>PesanKu.id</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -20,7 +20,8 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
 <body class="h-full flex flex-col">
 
 <!-- SEARCHING POPUP -->
-<div id="searchPopup" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+<div id="searchPopup"
+class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-slate-900 p-6 rounded-2xl text-center w-64">
     <div class="text-lg font-bold">Searching server</div>
     <div id="counter" class="text-4xl font-black mt-2">5</div>
@@ -31,16 +32,27 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
 <!-- MENU -->
 <div id="menu" class="flex-1 flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-slate-800 p-6 rounded-3xl space-y-4">
-    <h1 class="text-center text-3xl font-black">GhostChat</h1>
-    <input id="username" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900">
-    <input id="roomLetter" maxlength="1" placeholder="Room A-Z" class="w-full p-4 rounded-xl bg-slate-900 uppercase">
-    <input id="roomPort" type="number" placeholder="Port 1000-9999" class="w-full p-4 rounded-xl bg-slate-900">
-    <button onclick="joinRoom()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">JOIN</button>
+    <h1 class="text-center text-3xl font-black">PesanKu.id</h1>
+
+    <input id="username" placeholder="Username"
+      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
+
+    <input id="roomLetter" maxlength="1" placeholder="Room A-Z"
+      class="w-full p-4 rounded-xl bg-slate-900 uppercase outline-none">
+
+    <input id="roomPort" type="number" placeholder="Port 1000-9999"
+      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
+
+    <button id="joinBtn"
+      class="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold">
+      JOIN
+    </button>
   </div>
 </div>
 
 <!-- CHAT -->
 <div id="chat" class="hidden flex-1 flex flex-col">
+
 <div class="h-14 bg-slate-900 px-4 flex items-center justify-between">
   <div>
     <div id="roomInfo" class="font-bold"></div>
@@ -52,53 +64,59 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
 <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
 <div class="p-3 bg-slate-900 flex items-center gap-2">
-  <input type="file" id="fileInput" hidden onchange="sendFile(this.files[0])">
-  <button onclick="fileInput.click()">📎</button>
+  <input type="file" id="fileInput" hidden>
+  <button id="fileBtn">📎</button>
 
-  <!-- HOLD TO RECORD -->
   <button id="micBtn"
-    onmousedown="startRecord()"
-    onmouseup="stopRecord()"
-    ontouchstart="startRecord()"
-    ontouchend="stopRecord()"
     class="voice-btn w-12 h-12 rounded-full flex items-center justify-center">
     🎤
   </button>
 
   <input id="msg" placeholder="Message"
     class="flex-1 p-3 rounded-xl bg-slate-800 outline-none">
-  <button onclick="sendText()">➤</button>
+
+  <button id="sendBtn">➤</button>
 </div>
 </div>
 
 <script>
+/* ========= GLOBAL ========= */
 let peer,conn,username;
 let recorder,stream,chunks=[];
-let countdown;
+let timer;
 
+/* ========= DOM ========= */
+const joinBtn=document.getElementById("joinBtn");
+const searchPopup=document.getElementById("searchPopup");
+const counter=document.getElementById("counter");
+const micBtn=document.getElementById("micBtn");
+
+/* ========= SEARCH POPUP ========= */
 function showSearch(){
   searchPopup.classList.remove("hidden");
   let t=5;
   counter.textContent=t;
-  countdown=setInterval(()=>{
+  timer=setInterval(()=>{
     t--;
     counter.textContent=t;
     if(t<=0) hideSearch();
   },1000);
 }
 function hideSearch(){
-  clearInterval(countdown);
+  clearInterval(timer);
   searchPopup.classList.add("hidden");
 }
 
-function joinRoom(){
-  username=usernameInput.value=document.getElementById("username").value.trim();
+/* ========= JOIN ========= */
+joinBtn.onclick=()=>{
+  username=document.getElementById("username").value.trim();
   const l=roomLetter.value.toUpperCase();
   const p=roomPort.value;
   if(!username||!l||!p) return alert("Lengkapi data");
 
   showSearch();
-  const roomId=`ghost-${l}-${p}`;
+  const roomId=`pesanku-${l}-${p}`;
+
   peer=new Peer(roomId);
 
   peer.on("open",()=>{
@@ -120,27 +138,27 @@ function joinRoom(){
       });
     }
   });
-}
+};
 
+/* ========= CONNECTION ========= */
 function setupConn(){
   conn.on("open",()=>{
-    connInfo.textContent="connected";
     hideSearch();
-    systemMsg("Connected");
+    connInfo.textContent="connected";
+    systemMsg("Terhubung");
   });
   conn.on("data",d=>{
     if(d.type==="text") addMsg(d.user,d.msg,false);
-    if(d.type==="file") recvFile(d);
     if(d.type==="audio") recvAudio(d);
   });
 }
 
+/* ========= UI ========= */
 function openChat(l,p){
   menu.classList.add("hidden");
   chat.classList.remove("hidden");
   roomInfo.textContent=`Room ${l}-${p}`;
 }
-
 function systemMsg(t){
   const d=document.createElement("div");
   d.className="text-center text-xs opacity-60";
@@ -148,38 +166,32 @@ function systemMsg(t){
   messages.appendChild(d);
 }
 
-function addMsg(user,text,me){
-  const w=document.createElement("div");
-  w.className=`max-w-[80%] ${me?"self-end":"self-start"}`;
-  w.innerHTML=`<div class="text-xs opacity-70 mb-1">${user}</div>
-  <div class="${me?"chat-me":"chat-them"} p-3">${text}</div>`;
-  messages.appendChild(w);
-  messages.scrollTop=messages.scrollHeight;
-}
-
-function sendText(){
+/* ========= TEXT ========= */
+sendBtn.onclick=()=>{
   if(!conn||!conn.open) return;
   const t=msg.value.trim();
   if(!t) return;
   conn.send({type:"text",user:username,msg:t});
   addMsg("You",t,true);
   msg.value="";
+};
+function addMsg(user,text,me){
+  const w=document.createElement("div");
+  w.className=`max-w-[80%] ${me?"self-end":"self-start"}`;
+  w.innerHTML=`
+  <div class="text-xs opacity-70 mb-1">${user}</div>
+  <div class="${me?"chat-me":"chat-them"} p-3">${text}</div>`;
+  messages.appendChild(w);
+  messages.scrollTop=messages.scrollHeight;
 }
 
-function sendFile(f){
-  const r=new FileReader();
-  r.onload=()=>conn.send({type:"file",user:username,name:f.name,data:r.result});
-  r.readAsDataURL(f);
-}
+/* ========= VOICE (HOLD) ========= */
+micBtn.onmousedown=startRec;
+micBtn.onmouseup=stopRec;
+micBtn.ontouchstart=startRec;
+micBtn.ontouchend=stopRec;
 
-function recvFile(d){
-  const a=document.createElement("a");
-  a.href=d.data;a.download=d.name;
-  a.textContent=`📎 ${d.name}`;
-  messages.appendChild(a);
-}
-
-async function startRecord(){
+async function startRec(){
   micBtn.classList.add("voice-rec");
   stream=await navigator.mediaDevices.getUserMedia({audio:true});
   recorder=new MediaRecorder(stream);
@@ -187,8 +199,7 @@ async function startRecord(){
   recorder.ondataavailable=e=>chunks.push(e.data);
   recorder.start();
 }
-
-function stopRecord(){
+function stopRec(){
   if(!recorder) return;
   micBtn.classList.remove("voice-rec");
   recorder.onstop=()=>{
@@ -199,12 +210,11 @@ function stopRecord(){
   };
   recorder.stop();
 }
-
 function recvAudio(d){
-  const audio=new Audio(d.data);
   const b=document.createElement("button");
   b.textContent="▶ Voice message";
-  b.onclick=()=>audio.play();
+  const a=new Audio(d.data);
+  b.onclick=()=>a.play();
   messages.appendChild(b);
 }
 </script>

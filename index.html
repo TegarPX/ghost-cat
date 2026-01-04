@@ -10,120 +10,133 @@
 
 <style>
 body{
-background:#020617;
-color:#e5e7eb;
+margin:0;
+background:#0b141a;
+color:#e9edef;
+font-family:system-ui;
 }
 
-.card{
-background:#020617;
-border:1px solid #1e293b;
+/* HEADER */
+.header{
+background:#202c33;
+height:56px;
 }
 
-.chat-me{
-background:#2563eb;
-color:#fff;
-border-radius:18px 18px 0 18px;
+/* CHAT AREA */
+.chat-area{
+background:#0b141a;
 }
 
-.chat-them{
-background:#334155;
-color:#fff;
-border-radius:18px 18px 18px 0;
-}
-
-.chat-bubble{
-max-width:85%;
+/* BUBBLES */
+.bubble{
+max-width:80%;
+padding:8px 12px;
+border-radius:8px;
 word-wrap:break-word;
 overflow-wrap:anywhere;
 white-space:pre-wrap;
 }
 
-.system{
-font-size:10px;
-letter-spacing:.2em;
+.me{
+background:#005c4b;
+align-self:flex-end;
+border-bottom-right-radius:0;
+}
+
+.them{
+background:#202c33;
+align-self:flex-start;
+border-bottom-left-radius:0;
+}
+
+.username{
+font-size:11px;
 opacity:.6;
-font-weight:900;
+margin-bottom:2px;
+}
+
+/* INPUT */
+.input-bar{
+background:#202c33;
+height:56px;
 }
 
 input{
-background:#020617;
-color:#f8fafc;
-border:1px solid #1e293b;
+background:#2a3942;
+color:#e9edef;
 }
 
-input::placeholder{color:#64748b}
+input::placeholder{color:#8696a0}
 </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center p-4 font-sans">
+<body class="h-screen flex flex-col">
+
+<!-- HEADER -->
+<div class="header flex items-center justify-between px-4 text-sm font-semibold">
+<div id="roomInfo">ROOM</div>
+<div class="flex gap-3 text-xs opacity-80">
+<span id="connInfo">0 connected</span>
+<span id="onlineInfo">0 online</span>
+</div>
+</div>
 
 <!-- SETUP -->
-<div id="setupCard" class="card p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md">
-<h1 class="text-3xl font-black text-blue-500 text-center mb-6">
-GHOST<span class="text-slate-400">CHAT</span>
-</h1>
-
+<div id="setupScreen" class="flex-1 flex items-center justify-center">
+<div class="w-full max-w-sm px-6">
 <input id="username" placeholder="Username"
-class="w-full p-4 mb-3 rounded-2xl text-center font-bold">
+class="w-full p-3 rounded mb-3 text-center">
 
+<div class="flex gap-2 mb-3">
 <input id="roomLetter" maxlength="1" placeholder="A"
-class="w-full p-4 mb-3 rounded-2xl text-center font-bold">
-
-<input id="roomNumber" type="number" min="1000" max="9999" placeholder="1000"
-class="w-full p-4 mb-5 rounded-2xl text-center font-bold">
+class="w-1/3 p-3 rounded text-center">
+<input id="roomNumber" type="number" placeholder="1000"
+class="flex-1 p-3 rounded text-center">
+</div>
 
 <button onclick="initP2P()"
-class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl">
-Mulai Chatting
+class="w-full bg-[#005c4b] py-3 rounded font-bold">
+Mulai Chat
 </button>
+</div>
 </div>
 
 <!-- CHAT -->
-<div id="chatInterface"
-class="hidden w-full max-w-lg h-[90vh] card rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
+<div id="chatScreen" class="hidden flex-1 flex flex-col">
 
-<!-- TOP BAR -->
-<div class="bg-blue-600 text-white px-5 py-3 flex justify-between text-xs font-bold">
-<span id="roomInfo">ROOM</span>
-<span id="connInfo">0 Connected</span>
-<span id="onlineInfo">0 Online</span>
+<div id="messageBox"
+class="chat-area flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+<div id="waitingText" class="text-xs opacity-60 self-center">
+Menunggu partner...
+</div>
 </div>
 
-<div id="messageBox" class="flex-1 p-6 overflow-y-auto flex flex-col gap-4">
-<div id="waitingText" class="self-center system">MENUNGGU PARTNER...</div>
-</div>
-
-<div class="p-4 border-t border-slate-800 flex gap-2">
-<input id="messageInput" placeholder="Ketik pesan..."
-class="flex-1 p-4 rounded-2xl outline-none">
+<div class="input-bar flex items-center gap-2 px-3">
+<input id="messageInput" placeholder="Ketik pesan"
+class="flex-1 p-2 rounded outline-none">
 <button onclick="sendMessage()"
-class="bg-blue-600 text-white w-14 h-14 rounded-2xl">➤</button>
+class="text-[#00a884] font-bold px-3">➤</button>
 </div>
 </div>
 
 <script>
 let peer, conn, myName="";
 
-/* ===== GLOBAL ONLINE COUNTER ===== */
-const NAMESPACE="ghostchat-erzy";
-const KEY="global-online";
-
-fetch(`https://api.countapi.xyz/create?namespace=${NAMESPACE}&key=${KEY}&value=0`)
-.catch(()=>{});
-
-function updateOnline(){
-fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/${KEY}`)
+/* ONLINE COUNTER */
+const NS="ghostchat-whatsapp";
+const KEY="online";
+fetch(`https://api.countapi.xyz/create?namespace=${NS}&key=${KEY}&value=0`).catch(()=>{});
+fetch(`https://api.countapi.xyz/hit/${NS}/${KEY}`)
 .then(r=>r.json())
-.then(d=>onlineInfo.textContent=`${d.value} Online`);
-}
-updateOnline();
+.then(d=>onlineInfo.textContent=d.value+" online");
+
 setInterval(()=>{
-fetch(`https://api.countapi.xyz/get/${NAMESPACE}/${KEY}`)
+fetch(`https://api.countapi.xyz/get/${NS}/${KEY}`)
 .then(r=>r.json())
-.then(d=>onlineInfo.textContent=`${d.value} Online`);
+.then(d=>onlineInfo.textContent=d.value+" online");
 },5000);
 
-/* ===== P2P ===== */
+/* INIT */
 function initP2P(){
 myName=username.value.trim();
 const l=roomLetter.value.toUpperCase();
@@ -134,7 +147,9 @@ const roomId=`ghost-${l}-${n}`;
 peer=new Peer(roomId);
 
 peer.on("open",()=>{
-showChat(l,n);
+roomInfo.textContent=`ROOM ${l}-${n}`;
+setupScreen.classList.add("hidden");
+chatScreen.classList.remove("hidden");
 });
 
 peer.on("connection",c=>{
@@ -148,7 +163,9 @@ peer=new Peer();
 peer.on("open",()=>{
 conn=peer.connect(roomId);
 setupConn();
-showChat(l,n);
+roomInfo.textContent=`ROOM ${l}-${n}`;
+setupScreen.classList.add("hidden");
+chatScreen.classList.remove("hidden");
 });
 }
 });
@@ -157,24 +174,18 @@ showChat(l,n);
 function setupConn(){
 conn.on("open",()=>{
 waitingText.remove();
-connInfo.textContent="1 Connected";
+connInfo.textContent="1 connected";
 conn.send({sys:true,user:myName});
 });
 
 conn.on("data",d=>{
 if(d.sys){
+connInfo.textContent="2 connected";
 appendSystem(`${d.user} joined`);
-connInfo.textContent="2 Connected";
 }else{
 appendChat(d.user,d.msg,false);
 }
 });
-}
-
-function showChat(l,n){
-setupCard.classList.add("hidden");
-chatInterface.classList.remove("hidden");
-roomInfo.textContent=`ROOM ${l}-${n}`;
 }
 
 function sendMessage(){
@@ -187,19 +198,19 @@ messageInput.value="";
 }
 
 function appendChat(user,msg,me){
-const w=document.createElement("div");
-w.className=me?"self-end":"self-start";
-w.innerHTML=`
-<div class="text-[10px] font-bold opacity-60 mb-1">${user}</div>
-<div class="chat-bubble ${me?"chat-me":"chat-them"} p-4">${msg}</div>
+const wrap=document.createElement("div");
+wrap.className="flex flex-col "+(me?"items-end":"items-start");
+wrap.innerHTML=`
+<div class="username">${user}</div>
+<div class="bubble ${me?"me":"them"}">${msg}</div>
 `;
-messageBox.appendChild(w);
+messageBox.appendChild(wrap);
 messageBox.scrollTop=messageBox.scrollHeight;
 }
 
 function appendSystem(t){
 const d=document.createElement("div");
-d.className="self-center system";
+d.className="text-xs opacity-50 self-center";
 d.textContent=t;
 messageBox.appendChild(d);
 }

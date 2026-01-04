@@ -3,58 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GhostChat Ultra</title>
+<title>GhostChat</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-.smooth{transition:.3s}
-.mode-bright{background:#f1f5f9;color:#0f172a}
-.card-bright{background:#fff;border:1px solid #e2e8f0}
-.mode-dark{background:#0f172a}
-.card-dark{background:#1e293b;border:1px solid #334155}
+body{
+background:#020617;
+color:#e5e7eb;
+}
 
-.chat-me{background:#2563eb;color:#fff;border-radius:18px 18px 0 18px}
-.chat-them{background:#475569;color:#fff;border-radius:18px 18px 18px 0}
+.card{
+background:#020617;
+border:1px solid #1e293b;
+}
 
-.system{font-size:10px;font-weight:900;opacity:.6;letter-spacing:.2em}
+.chat-me{
+background:#2563eb;
+color:#fff;
+border-radius:18px 18px 0 18px;
+}
 
-.mode-dark input{background:#020617;color:#f8fafc}
-.mode-dark input::placeholder{color:#64748b}
+.chat-them{
+background:#334155;
+color:#fff;
+border-radius:18px 18px 18px 0;
+}
+
+.chat-bubble{
+max-width:85%;
+word-wrap:break-word;
+overflow-wrap:anywhere;
+white-space:pre-wrap;
+}
+
+.system{
+font-size:10px;
+letter-spacing:.2em;
+opacity:.6;
+font-weight:900;
+}
+
+input{
+background:#020617;
+color:#f8fafc;
+border:1px solid #1e293b;
+}
+
+input::placeholder{color:#64748b}
 </style>
 </head>
 
-<body id="mainBody"
-class="mode-bright min-h-screen flex items-center justify-center p-4 font-sans smooth">
+<body class="min-h-screen flex items-center justify-center p-4 font-sans">
 
 <!-- SETUP -->
-<div id="setupCard" class="card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md">
-<h1 class="text-3xl font-black text-blue-600 text-center mb-6">
+<div id="setupCard" class="card p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md">
+<h1 class="text-3xl font-black text-blue-500 text-center mb-6">
 GHOST<span class="text-slate-400">CHAT</span>
 </h1>
 
 <input id="username" placeholder="Username"
-class="w-full p-4 mb-3 rounded-2xl text-center font-bold border">
+class="w-full p-4 mb-3 rounded-2xl text-center font-bold">
 
 <input id="roomLetter" maxlength="1" placeholder="A"
-class="w-full p-4 mb-3 rounded-2xl text-center font-bold border">
+class="w-full p-4 mb-3 rounded-2xl text-center font-bold">
 
 <input id="roomNumber" type="number" min="1000" max="9999" placeholder="1000"
-class="w-full p-4 mb-5 rounded-2xl text-center font-bold border">
+class="w-full p-4 mb-5 rounded-2xl text-center font-bold">
 
 <button onclick="initP2P()"
-class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl">
+class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl">
 Mulai Chatting
 </button>
 </div>
 
 <!-- CHAT -->
 <div id="chatInterface"
-class="hidden w-full max-w-lg h-[90vh] card-bright rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
+class="hidden w-full max-w-lg h-[90vh] card rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
 
 <!-- TOP BAR -->
-<div class="bg-blue-600 text-white px-5 py-3 flex justify-between items-center text-xs font-bold">
+<div class="bg-blue-600 text-white px-5 py-3 flex justify-between text-xs font-bold">
 <span id="roomInfo">ROOM</span>
 <span id="connInfo">0 Connected</span>
 <span id="onlineInfo">0 Online</span>
@@ -64,7 +93,7 @@ class="hidden w-full max-w-lg h-[90vh] card-bright rounded-[2.5rem] shadow-2xl f
 <div id="waitingText" class="self-center system">MENUNGGU PARTNER...</div>
 </div>
 
-<div class="p-4 border-t flex gap-2">
+<div class="p-4 border-t border-slate-800 flex gap-2">
 <input id="messageInput" placeholder="Ketik pesan..."
 class="flex-1 p-4 rounded-2xl outline-none">
 <button onclick="sendMessage()"
@@ -73,15 +102,28 @@ class="bg-blue-600 text-white w-14 h-14 rounded-2xl">➤</button>
 </div>
 
 <script>
-let peer, conn, myName="", connected=false;
+let peer, conn, myName="";
 
-/* GLOBAL ONLINE COUNTER */
-const COUNTER_KEY="ghostchat-global";
-fetch(`https://api.countapi.xyz/hit/${COUNTER_KEY}/visits`)
+/* ===== GLOBAL ONLINE COUNTER ===== */
+const NAMESPACE="ghostchat-erzy";
+const KEY="global-online";
+
+fetch(`https://api.countapi.xyz/create?namespace=${NAMESPACE}&key=${KEY}&value=0`)
+.catch(()=>{});
+
+function updateOnline(){
+fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/${KEY}`)
 .then(r=>r.json())
 .then(d=>onlineInfo.textContent=`${d.value} Online`);
+}
+updateOnline();
+setInterval(()=>{
+fetch(`https://api.countapi.xyz/get/${NAMESPACE}/${KEY}`)
+.then(r=>r.json())
+.then(d=>onlineInfo.textContent=`${d.value} Online`);
+},5000);
 
-/* INIT */
+/* ===== P2P ===== */
 function initP2P(){
 myName=username.value.trim();
 const l=roomLetter.value.toUpperCase();
@@ -112,13 +154,11 @@ showChat(l,n);
 });
 }
 
-/* CONNECTION */
 function setupConn(){
 conn.on("open",()=>{
-connected=true;
 waitingText.remove();
 connInfo.textContent="1 Connected";
-conn.send({user:myName,sys:true});
+conn.send({sys:true,user:myName});
 });
 
 conn.on("data",d=>{
@@ -131,7 +171,6 @@ appendChat(d.user,d.msg,false);
 });
 }
 
-/* UI */
 function showChat(l,n){
 setupCard.classList.add("hidden");
 chatInterface.classList.remove("hidden");
@@ -148,13 +187,13 @@ messageInput.value="";
 }
 
 function appendChat(user,msg,me){
-const wrap=document.createElement("div");
-wrap.className=me?"self-end":"self-start";
-wrap.innerHTML=`
+const w=document.createElement("div");
+w.className=me?"self-end":"self-start";
+w.innerHTML=`
 <div class="text-[10px] font-bold opacity-60 mb-1">${user}</div>
-<div class="${me?"chat-me":"chat-them"} p-4 max-w-[85%]">${msg}</div>
+<div class="chat-bubble ${me?"chat-me":"chat-them"} p-4">${msg}</div>
 `;
-messageBox.appendChild(wrap);
+messageBox.appendChild(w);
 messageBox.scrollTop=messageBox.scrollHeight;
 }
 

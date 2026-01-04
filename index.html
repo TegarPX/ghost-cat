@@ -9,7 +9,8 @@
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-body{
+html,body{
+height:100%;
 margin:0;
 background:#0b141a;
 color:#e9edef;
@@ -20,14 +21,20 @@ font-family:system-ui;
 .header{
 background:#202c33;
 height:56px;
+flex-shrink:0;
 }
 
-/* CHAT AREA */
+/* CHAT */
 .chat-area{
-background:#0b141a;
+flex:1;
+overflow-y:auto;
+padding:12px;
+display:flex;
+flex-direction:column;
+gap:10px;
 }
 
-/* BUBBLES */
+/* BUBBLE */
 .bubble{
 max-width:80%;
 padding:8px 12px;
@@ -55,26 +62,62 @@ opacity:.6;
 margin-bottom:2px;
 }
 
-/* INPUT */
+/* INPUT BAR */
 .input-bar{
 background:#202c33;
-height:56px;
+padding:8px;
+display:flex;
+gap:8px;
+flex-shrink:0;
 }
 
 input{
 background:#2a3942;
 color:#e9edef;
+border:none;
+outline:none;
 }
 
 input::placeholder{color:#8696a0}
+
+/* SETUP */
+.setup{
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+height:100%;
+padding:24px;
+}
+
+.setup-card{
+width:100%;
+max-width:360px;
+}
+
+.setup input{
+width:100%;
+padding:12px;
+border-radius:6px;
+margin-bottom:10px;
+text-align:center;
+}
+
+.setup button{
+width:100%;
+background:#005c4b;
+padding:12px;
+border-radius:6px;
+font-weight:700;
+}
 </style>
 </head>
 
-<body class="h-screen flex flex-col">
+<body class="flex flex-col h-full">
 
 <!-- HEADER -->
 <div class="header flex items-center justify-between px-4 text-sm font-semibold">
-<div id="roomInfo">ROOM</div>
+<div id="roomInfo">GhostChat</div>
 <div class="flex gap-3 text-xs opacity-80">
 <span id="connInfo">0 connected</span>
 <span id="onlineInfo">0 online</span>
@@ -82,40 +125,38 @@ input::placeholder{color:#8696a0}
 </div>
 
 <!-- SETUP -->
-<div id="setupScreen" class="flex-1 flex items-center justify-center">
-<div class="w-full max-w-sm px-6">
-<input id="username" placeholder="Username"
-class="w-full p-3 rounded mb-3 text-center">
+<div id="setupScreen" class="setup">
+<div class="setup-card">
+<h1 class="text-3xl font-black text-center mb-2 text-[#00a884]">GhostChat</h1>
+<p class="text-center text-sm opacity-60 mb-6">
+Private • P2P • No Logs
+</p>
 
-<div class="flex gap-2 mb-3">
-<input id="roomLetter" maxlength="1" placeholder="A"
-class="w-1/3 p-3 rounded text-center">
-<input id="roomNumber" type="number" placeholder="1000"
-class="flex-1 p-3 rounded text-center">
+<input id="username" placeholder="Username">
+<div class="flex gap-2">
+<input id="roomLetter" maxlength="1" placeholder="A" class="w-1/3">
+<input id="roomNumber" type="number" placeholder="1000" class="flex-1">
 </div>
 
-<button onclick="initP2P()"
-class="w-full bg-[#005c4b] py-3 rounded font-bold">
-Mulai Chat
-</button>
+<button onclick="initP2P()" class="mt-4">Mulai Chat</button>
 </div>
 </div>
 
 <!-- CHAT -->
-<div id="chatScreen" class="hidden flex-1 flex flex-col">
+<div id="chatScreen" class="hidden flex flex-col flex-1">
 
-<div id="messageBox"
-class="chat-area flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+<div id="messageBox" class="chat-area">
 <div id="waitingText" class="text-xs opacity-60 self-center">
 Menunggu partner...
 </div>
 </div>
 
-<div class="input-bar flex items-center gap-2 px-3">
+<div class="input-bar">
 <input id="messageInput" placeholder="Ketik pesan"
-class="flex-1 p-2 rounded outline-none">
-<button onclick="sendMessage()"
-class="text-[#00a884] font-bold px-3">➤</button>
+class="flex-1 px-3 py-2 rounded">
+<button onclick="sendMessage()" class="text-[#00a884] font-bold px-3">
+➤
+</button>
 </div>
 </div>
 
@@ -123,17 +164,14 @@ class="text-[#00a884] font-bold px-3">➤</button>
 let peer, conn, myName="";
 
 /* ONLINE COUNTER */
-const NS="ghostchat-whatsapp";
+const NS="ghostchat-ui";
 const KEY="online";
 fetch(`https://api.countapi.xyz/create?namespace=${NS}&key=${KEY}&value=0`).catch(()=>{});
 fetch(`https://api.countapi.xyz/hit/${NS}/${KEY}`)
-.then(r=>r.json())
-.then(d=>onlineInfo.textContent=d.value+" online");
-
+.then(r=>r.json()).then(d=>onlineInfo.textContent=d.value+" online");
 setInterval(()=>{
 fetch(`https://api.countapi.xyz/get/${NS}/${KEY}`)
-.then(r=>r.json())
-.then(d=>onlineInfo.textContent=d.value+" online");
+.then(r=>r.json()).then(d=>onlineInfo.textContent=d.value+" online");
 },5000);
 
 /* INIT */

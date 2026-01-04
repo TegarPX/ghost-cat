@@ -2,276 +2,200 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GhostChat</title>
 
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-:root{
-  --bg:#0b141a;
-  --header:#202c33;
-  --input:#2a3942;
-  --me:#005c4b;
-  --them:#202c33;
-  --text:#e9edef;
-  --sub:#8696a0;
+html,body{height:100%;background:#0f172a;color:#e5e7eb}
+.chat-bubble-me{
+  background:#2563eb;
+  color:white;
+  border-radius:16px 16px 4px 16px;
+  word-break:break-word;
 }
-*{box-sizing:border-box;font-family:system-ui}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  height:100vh;
-  overflow:hidden;
-}
-.hidden{display:none}
-
-/* ===== MAIN MENU ===== */
-#menu{
-  height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.menu-box{
-  width:90%;
-  max-width:420px;
-  background:#111b21;
-  padding:20px;
-  border-radius:12px;
-}
-.menu-box h2{text-align:center;margin-bottom:16px}
-.menu-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-.menu-grid input,select{
-  grid-column:span 2;
-  padding:12px;
-  border-radius:8px;
-  border:none;
-  background:var(--input);
-  color:var(--text);
-}
-.menu-grid .half{grid-column:span 1}
-.menu-grid button{
-  grid-column:span 2;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  background:#00a884;
-  color:black;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-/* ===== CHAT ===== */
-#chat{
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
-#header{
-  background:var(--header);
-  padding:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-#header small{color:var(--sub)}
-#messages{
-  flex:1;
-  overflow-y:auto;
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-.bubble{
-  max-width:75%;
-  padding:8px 10px;
-  border-radius:10px;
-  word-wrap:break-word;
-}
-.me{background:var(--me);align-self:flex-end}
-.them{background:var(--them);align-self:flex-start}
-.bubble .user{font-size:11px;color:#9de1d3}
-.bubble img{max-width:100%;border-radius:6px}
-
-/* ===== INPUT ===== */
-#inputBar{
-  background:var(--header);
-  padding:8px;
-  display:flex;
-  gap:6px;
-}
-#inputBar input{
-  flex:1;
-  padding:10px;
-  border-radius:20px;
-  border:none;
-  background:var(--input);
-  color:var(--text);
-}
-#inputBar button{
-  border:none;
-  background:#00a884;
-  border-radius:50%;
-  width:40px;
-  height:40px;
-  font-weight:bold;
-  cursor:pointer;
+.chat-bubble-them{
+  background:#334155;
+  color:white;
+  border-radius:16px 16px 16px 4px;
+  word-break:break-word;
 }
 </style>
 </head>
+<body class="h-full flex flex-col">
 
-<body>
+<!-- ========== MAIN MENU ========== -->
+<div id="menu" class="flex-1 flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+    <h1 class="text-center text-3xl font-black">GhostChat</h1>
 
-<!-- ===== MENU ===== -->
-<div id="menu">
-  <div class="menu-box">
-    <h2>GhostChat</h2>
-    <div class="menu-grid">
-      <input id="username" placeholder="Username">
-      <select id="roomLetter" class="half">
-        <option value="">Room</option>
-        <script>
-          for(let i=65;i<=90;i++)
-            document.write(`<option>${String.fromCharCode(i)}</option>`)
-        </script>
-      </select>
-      <input id="roomNumber" class="half" placeholder="Port">
-      <button onclick="join()">JOIN</button>
-    </div>
+    <input id="username" placeholder="Username"
+      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
+
+    <input id="roomLetter" maxlength="1" placeholder="Room A-Z"
+      class="w-full p-4 rounded-xl bg-slate-900 uppercase outline-none">
+
+    <input id="roomPort" type="number" placeholder="Port (1000-9999)"
+      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
+
+    <button onclick="joinRoom()"
+      class="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold">
+      JOIN
+    </button>
   </div>
 </div>
 
-<!-- ===== CHAT ===== -->
-<div id="chat" class="hidden">
-  <div id="header">
-    <div>
-      <b id="roomInfo"></b><br>
-      <small id="status">Connecting...</small>
-    </div>
-    <small id="online">👥 1 online</small>
-  </div>
+<!-- ========== CHAT ========== -->
+<div id="chat" class="hidden flex-1 flex flex-col">
 
-  <div id="messages"></div>
-
-  <div id="inputBar">
-    <button onclick="pickImage()">🖼️</button>
-    <button onclick="recordVoice()">🎤</button>
-    <input id="msg" placeholder="Message">
-    <button onclick="send()">➤</button>
+<!-- TOP BAR -->
+<div class="h-16 bg-slate-900 flex items-center justify-between px-4">
+  <div>
+    <div id="roomInfo" class="font-bold"></div>
+    <div id="connInfo" class="text-xs opacity-70">connecting...</div>
   </div>
+  <button onclick="location.reload()" class="text-sm">Keluar</button>
 </div>
 
-<input type="file" id="file" hidden>
+<!-- MESSAGES -->
+<div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+<!-- INPUT -->
+<div class="p-3 bg-slate-900 flex items-center gap-2">
+  <input type="file" id="fileInput" hidden onchange="sendFile(this.files[0])">
+  <button onclick="fileInput.click()">📎</button>
+  <button onclick="startRecord()">🎤</button>
+  <input id="msg" placeholder="Message"
+    class="flex-1 p-3 rounded-xl bg-slate-800 outline-none">
+  <button onclick="sendText()">➤</button>
+</div>
+
+</div>
 
 <script>
-let peer,conn,myName,online=1,mediaRecorder,chunks=[];
+let peer,conn,username,mediaRecorder,audioChunks=[];
 
-function join(){
-  myName=username.value.trim();
-  if(!myName||!roomLetter.value||!roomNumber.value) return alert("Lengkapi semua");
-  menu.classList.add("hidden");
-  chat.classList.remove("hidden");
+function joinRoom(){
+  username=document.getElementById("username").value.trim();
+  const l=roomLetter.value.toUpperCase();
+  const p=roomPort.value;
+  if(!username||!l||!p) return alert("Lengkapi data");
 
-  const room=`ghost-${roomLetter.value}-${roomNumber.value}`;
-  roomInfo.textContent=room;
+  const roomId=`ghost-${l}-${p}`;
+  peer=new Peer(roomId);
 
-  peer=new Peer(room);
-  peer.on("open",()=>status.textContent="Menunggu partner...");
-  peer.on("connection",c=>connect(c));
+  peer.on("open",()=>{
+    openChat(l,p);
+    addSystem("Menunggu partner...");
+  });
+
+  peer.on("connection",c=>{
+    conn=c;
+    setupConn();
+  });
+
   peer.on("error",e=>{
     if(e.type==="unavailable-id"){
       peer=new Peer();
-      peer.on("open",()=>connect(peer.connect(room)));
+      peer.on("open",()=>{
+        conn=peer.connect(roomId);
+        setupConn();
+        openChat(l,p);
+      });
     }
   });
-
-  setInterval(()=>online.textContent=`👥 ${online} online`,1000);
 }
 
-function connect(c){
-  conn=c;
+function setupConn(){
   conn.on("open",()=>{
-    status.textContent="Connected";
-    online=2;
+    document.getElementById("connInfo").textContent="connected";
+    addSystem("Terhubung");
   });
+
   conn.on("data",data=>{
-    online=2;
-    if(data.type==="text") add(data.msg,data.user,"them");
-    if(data.type==="img") addImg(data.data,data.user);
-    if(data.type==="voice") addVoice(data.data,data.user);
+    if(data.type==="text") addMsg(data.user,data.msg,false);
+    if(data.type==="file") receiveFile(data);
+    if(data.type==="audio") receiveAudio(data);
   });
 }
 
-function add(msg,user,type){
+function openChat(l,p){
+  menu.classList.add("hidden");
+  chat.classList.remove("hidden");
+  roomInfo.textContent=`Room ${l}-${p}`;
+}
+
+function addSystem(t){
+  const d=document.createElement("div");
+  d.className="text-center text-xs opacity-60";
+  d.textContent=t;
+  messages.appendChild(d);
+}
+
+function addMsg(user,text,me){
+  const w=document.createElement("div");
+  w.className=`max-w-[80%] ${me?"self-end":"self-start"}`;
+  const u=document.createElement("div");
+  u.className="text-xs opacity-70 mb-1";
+  u.textContent=user;
   const b=document.createElement("div");
-  b.className=`bubble ${type}`;
-  b.innerHTML=`<div class="user">${user}</div>${msg}`;
-  messages.appendChild(b);
+  b.className=me?"chat-bubble-me p-3":"chat-bubble-them p-3";
+  b.textContent=text;
+  w.append(u,b);
+  messages.appendChild(w);
   messages.scrollTop=messages.scrollHeight;
 }
 
-function send(){
-  if(!msg.value||!conn?.open) return;
-  add(msg.value,myName,"me");
-  conn.send({type:"text",msg:msg.value,user:myName});
+function sendText(){
+  if(!conn||!conn.open) return;
+  const t=msg.value.trim();
+  if(!t) return;
+  conn.send({type:"text",user:username,msg:t});
+  addMsg("You",t,true);
   msg.value="";
 }
 
-function pickImage(){
-  file.accept="image/*";
-  file.onchange=()=>{
+function sendFile(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    conn.send({type:"file",user:username,name:file.name,data:r.result});
+  };
+  r.readAsDataURL(file);
+}
+
+function receiveFile(d){
+  const a=document.createElement("a");
+  a.href=d.data;
+  a.download=d.name;
+  a.textContent=`📎 ${d.name}`;
+  messages.appendChild(a);
+}
+
+async function startRecord(){
+  const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  mediaRecorder=new MediaRecorder(stream);
+  audioChunks=[];
+  mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+  mediaRecorder.onstop=()=>{
+    const blob=new Blob(audioChunks,{type:"audio/webm"});
     const r=new FileReader();
     r.onload=()=>{
-      addImg(r.result,myName,"me");
-      conn.send({type:"img",data:r.result,user:myName});
+      conn.send({type:"audio",user:username,data:r.result});
     };
-    r.readAsDataURL(file.files[0]);
+    r.readAsDataURL(blob);
   };
-  file.click();
+  mediaRecorder.start();
+  setTimeout(()=>mediaRecorder.stop(),4000);
 }
 
-function addImg(src,user,type="them"){
-  const b=document.createElement("div");
-  b.className=`bubble ${type}`;
-  b.innerHTML=`<div class="user">${user}</div><img src="${src}">`;
-  messages.appendChild(b);
-  messages.scrollTop=messages.scrollHeight;
-}
-
-function recordVoice(){
-  navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{
-    mediaRecorder=new MediaRecorder(s);
-    chunks=[];
-    mediaRecorder.ondataavailable=e=>chunks.push(e.data);
-    mediaRecorder.onstop=()=>{
-      const blob=new Blob(chunks,{type:"audio/ogg"});
-      const r=new FileReader();
-      r.onload=()=>{
-        addVoice(r.result,myName,"me");
-        conn.send({type:"voice",data:r.result,user:myName});
-      };
-      r.readAsDataURL(blob);
-    };
-    mediaRecorder.start();
-    setTimeout(()=>mediaRecorder.stop(),3000);
-  });
-}
-
-function addVoice(src,user,type="them"){
-  const b=document.createElement("div");
-  b.className=`bubble ${type}`;
-  b.innerHTML=`<div class="user">${user}</div><audio controls src="${src}"></audio>`;
-  messages.appendChild(b);
-  messages.scrollTop=messages.scrollHeight;
+function receiveAudio(d){
+  const audio=document.createElement("audio");
+  audio.src=d.data;
+  audio.controls=true;
+  messages.appendChild(audio);
 }
 </script>
-
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GhostChat - Ultra Private</title>
+<title>GhostChat Ultra</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -12,132 +12,87 @@
 .smooth{transition:.3s}
 .mode-bright{background:#f1f5f9;color:#0f172a}
 .card-bright{background:#fff;border:1px solid #e2e8f0}
-.mode-dark{background:#0f172a!important}
-.card-dark{background:#1e293b!important;border:1px solid #334155!important}
+.mode-dark{background:#0f172a}
+.card-dark{background:#1e293b;border:1px solid #334155}
 
-.chat-bubble-me{background:#2563eb;color:#fff;border-radius:18px 18px 0 18px}
-.chat-bubble-them{background:#475569;color:#fff;border-radius:18px 18px 18px 0}
+.chat-me{background:#2563eb;color:#fff;border-radius:18px 18px 0 18px}
+.chat-them{background:#475569;color:#fff;border-radius:18px 18px 18px 0}
 
-#messageBox::-webkit-scrollbar{width:4px}
-#messageBox::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+.system{font-size:10px;font-weight:900;opacity:.6;letter-spacing:.2em}
 
-.mode-dark p,.mode-dark span,.mode-dark h1,.mode-dark h2,.mode-dark label{color:#e5e7eb}
-
-.mode-dark input,.mode-dark textarea{
-background:#020617!important;
-color:#f8fafc!important;
-caret-color:#f8fafc;
-}
+.mode-dark input{background:#020617;color:#f8fafc}
 .mode-dark input::placeholder{color:#64748b}
-
-.system-text{
-font-size:10px;
-font-weight:900;
-text-transform:uppercase;
-letter-spacing:.2em;
-opacity:.6
-}
 </style>
 </head>
 
 <body id="mainBody"
-class="mode-bright smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans">
-
-<!-- THEME -->
-<div class="fixed top-5 right-5 z-50">
-<button id="themeBtn" onclick="toggleTheme()"
-class="p-3 rounded-2xl bg-white shadow-lg border flex gap-2">
-<span id="themeIcon">🌙</span>
-<span id="themeText" class="text-xs font-bold uppercase">Dark</span>
-</button>
-</div>
+class="mode-bright min-h-screen flex items-center justify-center p-4 font-sans smooth">
 
 <!-- SETUP -->
-<div id="setupCard"
-class="card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md">
-
-<div class="text-center mb-8">
-<h1 class="text-3xl font-black text-blue-600">
+<div id="setupCard" class="card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md">
+<h1 class="text-3xl font-black text-blue-600 text-center mb-6">
 GHOST<span class="text-slate-400">CHAT</span>
 </h1>
-<p class="text-xs opacity-50 uppercase">No Database • No Logs • RAM Only</p>
-</div>
 
-<div class="space-y-5">
+<input id="username" placeholder="Username"
+class="w-full p-4 mb-3 rounded-2xl text-center font-bold border">
+
 <input id="roomLetter" maxlength="1" placeholder="A"
-class="w-full p-4 rounded-2xl text-center text-2xl font-bold border">
+class="w-full p-4 mb-3 rounded-2xl text-center font-bold border">
 
 <input id="roomNumber" type="number" min="1000" max="9999" placeholder="1000"
-class="w-full p-4 rounded-2xl text-center text-2xl font-bold border">
+class="w-full p-4 mb-5 rounded-2xl text-center font-bold border">
 
 <button onclick="initP2P()"
 class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl">
 Mulai Chatting
 </button>
 </div>
-</div>
 
 <!-- CHAT -->
 <div id="chatInterface"
-class="hidden w-full max-w-lg h-[90vh] card-bright rounded-[2.5rem]
-shadow-2xl flex flex-col overflow-hidden">
+class="hidden w-full max-w-lg h-[90vh] card-bright rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
 
-<div class="p-6 bg-blue-600 text-white flex justify-between">
-<div>
-<p class="text-[10px] uppercase opacity-70">Privat Room</p>
-<h2 id="activeRoomName" class="font-black text-xl">A-1000</h2>
-</div>
-<button onclick="location.reload()"
-class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold">
-Keluar
-</button>
+<!-- TOP BAR -->
+<div class="bg-blue-600 text-white px-5 py-3 flex justify-between items-center text-xs font-bold">
+<span id="roomInfo">ROOM</span>
+<span id="connInfo">0 Connected</span>
+<span id="onlineInfo">0 Online</span>
 </div>
 
-<div id="messageBox"
-class="flex-1 p-6 overflow-y-auto flex flex-col gap-4">
-<div class="self-center bg-slate-100 px-4 py-1 rounded-full text-[10px]">
-Menunggu partner...
-</div>
+<div id="messageBox" class="flex-1 p-6 overflow-y-auto flex flex-col gap-4">
+<div id="waitingText" class="self-center system">MENUNGGU PARTNER...</div>
 </div>
 
 <div class="p-4 border-t flex gap-2">
-<input id="messageInput" placeholder="Ketik pesan rahasia..."
+<input id="messageInput" placeholder="Ketik pesan..."
 class="flex-1 p-4 rounded-2xl outline-none">
-<button onclick="sendPrivateMessage()"
+<button onclick="sendMessage()"
 class="bg-blue-600 text-white w-14 h-14 rounded-2xl">➤</button>
 </div>
 </div>
 
 <script>
-let peer, conn, isDark=false;
+let peer, conn, myName="", connected=false;
 
-/* THEME */
-function toggleTheme(){
-isDark=!isDark;
-mainBody.className=isDark
-?"mode-dark smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans"
-:"mode-bright smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans";
-setupCard.className=isDark
-?"card-dark p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md"
-:"card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md";
-chatInterface.classList.toggle("card-dark",isDark);
-themeIcon.textContent=isDark?"☀️":"🌙";
-themeText.textContent=isDark?"Bright":"Dark";
-}
+/* GLOBAL ONLINE COUNTER */
+const COUNTER_KEY="ghostchat-global";
+fetch(`https://api.countapi.xyz/hit/${COUNTER_KEY}/visits`)
+.then(r=>r.json())
+.then(d=>onlineInfo.textContent=`${d.value} Online`);
 
-/* ===== P2P FIX TOTAL ===== */
+/* INIT */
 function initP2P(){
+myName=username.value.trim();
 const l=roomLetter.value.toUpperCase();
 const n=roomNumber.value;
-if(!l||!n) return alert("Isi room dulu!");
+if(!myName||!l||!n) return alert("Lengkapi data!");
 
 const roomId=`ghost-${l}-${n}`;
-
 peer=new Peer(roomId);
 
 peer.on("open",()=>{
 showChat(l,n);
-appendMessage("Menunggu partner...","system");
 });
 
 peer.on("connection",c=>{
@@ -145,8 +100,8 @@ conn=c;
 setupConn();
 });
 
-peer.on("error",err=>{
-if(err.type==="unavailable-id"){
+peer.on("error",e=>{
+if(e.type==="unavailable-id"){
 peer=new Peer();
 peer.on("open",()=>{
 conn=peer.connect(roomId);
@@ -157,45 +112,58 @@ showChat(l,n);
 });
 }
 
+/* CONNECTION */
 function setupConn(){
 conn.on("open",()=>{
-appendMessage("Terhubung secara privat.","system");
+connected=true;
+waitingText.remove();
+connInfo.textContent="1 Connected";
+conn.send({user:myName,sys:true});
 });
-conn.on("data",m=>{
-appendMessage(m,"them");
+
+conn.on("data",d=>{
+if(d.sys){
+appendSystem(`${d.user} joined`);
+connInfo.textContent="2 Connected";
+}else{
+appendChat(d.user,d.msg,false);
+}
 });
 }
 
+/* UI */
 function showChat(l,n){
 setupCard.classList.add("hidden");
 chatInterface.classList.remove("hidden");
-activeRoomName.textContent=`${l}-${n}`;
+roomInfo.textContent=`ROOM ${l}-${n}`;
 }
 
-function sendPrivateMessage(){
+function sendMessage(){
 if(!conn||!conn.open) return;
 const msg=messageInput.value.trim();
 if(!msg) return;
-conn.send(msg);
-appendMessage(msg,"me");
+conn.send({user:myName,msg});
+appendChat(myName,msg,true);
 messageInput.value="";
 }
 
-function appendMessage(text,type){
-const d=document.createElement("div");
-d.className=type==="me"
-?"self-end chat-bubble-me p-4 max-w-[85%]"
-:type==="them"
-?"self-start chat-bubble-them p-4 max-w-[85%]"
-:"self-center system-text";
-d.textContent=text;
-messageBox.appendChild(d);
+function appendChat(user,msg,me){
+const wrap=document.createElement("div");
+wrap.className=me?"self-end":"self-start";
+wrap.innerHTML=`
+<div class="text-[10px] font-bold opacity-60 mb-1">${user}</div>
+<div class="${me?"chat-me":"chat-them"} p-4 max-w-[85%]">${msg}</div>
+`;
+messageBox.appendChild(wrap);
 messageBox.scrollTop=messageBox.scrollHeight;
 }
 
-messageInput.addEventListener("keydown",e=>{
-if(e.key==="Enter") sendPrivateMessage();
-});
+function appendSystem(t){
+const d=document.createElement("div");
+d.className="self-center system";
+d.textContent=t;
+messageBox.appendChild(d);
+}
 </script>
 </body>
 </html>

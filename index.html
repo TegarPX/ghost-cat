@@ -1,314 +1,277 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>GhostChat</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-html,body{
-height:100%;
-margin:0;
-background:#0b141a;
-color:#e9edef;
-font-family:system-ui;
+:root{
+  --bg:#0b141a;
+  --header:#202c33;
+  --input:#2a3942;
+  --me:#005c4b;
+  --them:#202c33;
+  --text:#e9edef;
+  --sub:#8696a0;
+}
+*{box-sizing:border-box;font-family:system-ui}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+}
+.hidden{display:none}
+
+/* ===== MAIN MENU ===== */
+#menu{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.menu-box{
+  width:90%;
+  max-width:420px;
+  background:#111b21;
+  padding:20px;
+  border-radius:12px;
+}
+.menu-box h2{text-align:center;margin-bottom:16px}
+.menu-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.menu-grid input,select{
+  grid-column:span 2;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  background:var(--input);
+  color:var(--text);
+}
+.menu-grid .half{grid-column:span 1}
+.menu-grid button{
+  grid-column:span 2;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#00a884;
+  color:black;
+  font-weight:bold;
+  cursor:pointer;
 }
 
-/* HEADER */
-.header{
-background:#202c33;
-height:56px;
-flex-shrink:0;
+/* ===== CHAT ===== */
+#chat{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
 }
-
-/* CHAT */
-.chat-area{
-flex:1;
-overflow-y:auto;
-padding:12px;
-display:flex;
-flex-direction:column;
-gap:10px;
+#header{
+  background:var(--header);
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
-
-/* BUBBLE */
+#header small{color:var(--sub)}
+#messages{
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
 .bubble{
-max-width:80%;
-padding:8px 12px;
-border-radius:8px;
-word-wrap:break-word;
-overflow-wrap:anywhere;
-white-space:pre-wrap;
+  max-width:75%;
+  padding:8px 10px;
+  border-radius:10px;
+  word-wrap:break-word;
 }
+.me{background:var(--me);align-self:flex-end}
+.them{background:var(--them);align-self:flex-start}
+.bubble .user{font-size:11px;color:#9de1d3}
+.bubble img{max-width:100%;border-radius:6px}
 
-.me{
-background:#005c4b;
-align-self:flex-end;
-border-bottom-right-radius:0;
+/* ===== INPUT ===== */
+#inputBar{
+  background:var(--header);
+  padding:8px;
+  display:flex;
+  gap:6px;
 }
-
-.them{
-background:#202c33;
-align-self:flex-start;
-border-bottom-left-radius:0;
+#inputBar input{
+  flex:1;
+  padding:10px;
+  border-radius:20px;
+  border:none;
+  background:var(--input);
+  color:var(--text);
 }
-
-.username{
-font-size:11px;
-opacity:.6;
-margin-bottom:2px;
-}
-
-/* INPUT BAR */
-.input-bar{
-background:#202c33;
-padding:8px;
-display:flex;
-gap:8px;
-flex-shrink:0;
-}
-
-input{
-background:#2a3942;
-color:#e9edef;
-border:none;
-outline:none;
-}
-
-input::placeholder{color:#8696a0}
-
-/* SETUP */
-.setup{
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-height:100%;
-padding:24px;
-}
-
-.setup-card{
-width:100%;
-max-width:380px;
-}
-
-.setup-title{
-text-align:center;
-margin-bottom:20px;
-}
-
-.setup-title h1{
-font-size:32px;
-font-weight:900;
-color:#00a884;
-}
-
-.setup-title p{
-font-size:13px;
-opacity:.6;
-margin-top:4px;
-}
-
-/* FORM BARS */
-.form-bar{
-background:#202c33;
-border-radius:12px;
-padding:14px;
-margin-bottom:12px;
-}
-
-.form-label{
-font-size:11px;
-opacity:.6;
-margin-bottom:6px;
-letter-spacing:.08em;
-text-transform:uppercase;
-}
-
-.form-input{
-width:100%;
-background:#2a3942;
-padding:12px;
-border-radius:8px;
-text-align:center;
-font-weight:600;
-}
-
-.room-row{
-display:flex;
-gap:10px;
-}
-
-.btn-start{
-width:100%;
-background:#005c4b;
-padding:14px;
-border-radius:12px;
-font-weight:800;
-margin-top:8px;
+#inputBar button{
+  border:none;
+  background:#00a884;
+  border-radius:50%;
+  width:40px;
+  height:40px;
+  font-weight:bold;
+  cursor:pointer;
 }
 </style>
 </head>
 
-<body class="flex flex-col h-full">
+<body>
 
-<!-- HEADER -->
-<div class="header flex items-center justify-between px-4 text-sm font-semibold">
-<div id="roomInfo">GhostChat</div>
-<div class="flex gap-3 text-xs opacity-80">
-<span id="connInfo">0 connected</span>
-<span id="onlineInfo">0 online</span>
-</div>
-</div>
-
-<!-- SETUP -->
-<div id="setupScreen" class="setup">
-<div class="setup-card">
-
-<div class="setup-title">
-<h1>GhostChat</h1>
-<p>Private • P2P • No Logs</p>
-</div>
-
-<!-- USERNAME -->
-<div class="form-bar">
-<div class="form-label">Username</div>
-<input id="username" placeholder="Masukkan username"
-class="form-input">
+<!-- ===== MENU ===== -->
+<div id="menu">
+  <div class="menu-box">
+    <h2>GhostChat</h2>
+    <div class="menu-grid">
+      <input id="username" placeholder="Username">
+      <select id="roomLetter" class="half">
+        <option value="">Room</option>
+        <script>
+          for(let i=65;i<=90;i++)
+            document.write(`<option>${String.fromCharCode(i)}</option>`)
+        </script>
+      </select>
+      <input id="roomNumber" class="half" placeholder="Port">
+      <button onclick="join()">JOIN</button>
+    </div>
+  </div>
 </div>
 
-<!-- ROOM -->
-<div class="form-bar">
-<div class="form-label">Room</div>
-<div class="room-row">
-<input id="roomLetter" maxlength="1" placeholder="A"
-class="form-input w-1/3">
-<input id="roomNumber" type="number" placeholder="1000"
-class="form-input flex-1">
-</div>
+<!-- ===== CHAT ===== -->
+<div id="chat" class="hidden">
+  <div id="header">
+    <div>
+      <b id="roomInfo"></b><br>
+      <small id="status">Connecting...</small>
+    </div>
+    <small id="online">👥 1 online</small>
+  </div>
+
+  <div id="messages"></div>
+
+  <div id="inputBar">
+    <button onclick="pickImage()">🖼️</button>
+    <button onclick="recordVoice()">🎤</button>
+    <input id="msg" placeholder="Message">
+    <button onclick="send()">➤</button>
+  </div>
 </div>
 
-<button onclick="initP2P()" class="btn-start">
-Mulai Chat
-</button>
-
-</div>
-</div>
-
-<!-- CHAT -->
-<div id="chatScreen" class="hidden flex flex-col flex-1">
-
-<div id="messageBox" class="chat-area">
-<div id="waitingText" class="text-xs opacity-60 self-center">
-Menunggu partner...
-</div>
-</div>
-
-<div class="input-bar">
-<input id="messageInput" placeholder="Ketik pesan"
-class="flex-1 px-3 py-2 rounded">
-<button onclick="sendMessage()" class="text-[#00a884] font-bold px-3">
-➤
-</button>
-</div>
-</div>
+<input type="file" id="file" hidden>
 
 <script>
-let peer, conn, myName="";
+let peer,conn,myName,online=1,mediaRecorder,chunks=[];
 
-/* ONLINE COUNTER */
-const NS="ghostchat-ui";
-const KEY="online";
-fetch(`https://api.countapi.xyz/create?namespace=${NS}&key=${KEY}&value=0`).catch(()=>{});
-fetch(`https://api.countapi.xyz/hit/${NS}/${KEY}`)
-.then(r=>r.json()).then(d=>onlineInfo.textContent=d.value+" online");
-setInterval(()=>{
-fetch(`https://api.countapi.xyz/get/${NS}/${KEY}`)
-.then(r=>r.json()).then(d=>onlineInfo.textContent=d.value+" online");
-},5000);
+function join(){
+  myName=username.value.trim();
+  if(!myName||!roomLetter.value||!roomNumber.value) return alert("Lengkapi semua");
+  menu.classList.add("hidden");
+  chat.classList.remove("hidden");
 
-/* INIT */
-function initP2P(){
-myName=username.value.trim();
-const l=roomLetter.value.toUpperCase();
-const n=roomNumber.value;
-if(!myName||!l||!n) return alert("Lengkapi data!");
+  const room=`ghost-${roomLetter.value}-${roomNumber.value}`;
+  roomInfo.textContent=room;
 
-const roomId=`ghost-${l}-${n}`;
-peer=new Peer(roomId);
+  peer=new Peer(room);
+  peer.on("open",()=>status.textContent="Menunggu partner...");
+  peer.on("connection",c=>connect(c));
+  peer.on("error",e=>{
+    if(e.type==="unavailable-id"){
+      peer=new Peer();
+      peer.on("open",()=>connect(peer.connect(room)));
+    }
+  });
 
-peer.on("open",()=>{
-roomInfo.textContent=`ROOM ${l}-${n}`;
-setupScreen.classList.add("hidden");
-chatScreen.classList.remove("hidden");
-});
-
-peer.on("connection",c=>{
-conn=c;
-setupConn();
-});
-
-peer.on("error",e=>{
-if(e.type==="unavailable-id"){
-peer=new Peer();
-peer.on("open",()=>{
-conn=peer.connect(roomId);
-setupConn();
-roomInfo.textContent=`ROOM ${l}-${n}`;
-setupScreen.classList.add("hidden");
-chatScreen.classList.remove("hidden");
-});
-}
-});
+  setInterval(()=>online.textContent=`👥 ${online} online`,1000);
 }
 
-function setupConn(){
-conn.on("open",()=>{
-waitingText.remove();
-connInfo.textContent="1 connected";
-conn.send({sys:true,user:myName});
-});
-
-conn.on("data",d=>{
-if(d.sys){
-connInfo.textContent="2 connected";
-appendSystem(`${d.user} joined`);
-}else{
-appendChat(d.user,d.msg,false);
-}
-});
+function connect(c){
+  conn=c;
+  conn.on("open",()=>{
+    status.textContent="Connected";
+    online=2;
+  });
+  conn.on("data",data=>{
+    online=2;
+    if(data.type==="text") add(data.msg,data.user,"them");
+    if(data.type==="img") addImg(data.data,data.user);
+    if(data.type==="voice") addVoice(data.data,data.user);
+  });
 }
 
-function sendMessage(){
-if(!conn||!conn.open) return;
-const msg=messageInput.value.trim();
-if(!msg) return;
-conn.send({user:myName,msg});
-appendChat(myName,msg,true);
-messageInput.value="";
+function add(msg,user,type){
+  const b=document.createElement("div");
+  b.className=`bubble ${type}`;
+  b.innerHTML=`<div class="user">${user}</div>${msg}`;
+  messages.appendChild(b);
+  messages.scrollTop=messages.scrollHeight;
 }
 
-function appendChat(user,msg,me){
-const wrap=document.createElement("div");
-wrap.className="flex flex-col "+(me?"items-end":"items-start");
-wrap.innerHTML=`
-<div class="username">${user}</div>
-<div class="bubble ${me?"me":"them"}">${msg}</div>
-`;
-messageBox.appendChild(wrap);
-messageBox.scrollTop=messageBox.scrollHeight;
+function send(){
+  if(!msg.value||!conn?.open) return;
+  add(msg.value,myName,"me");
+  conn.send({type:"text",msg:msg.value,user:myName});
+  msg.value="";
 }
 
-function appendSystem(t){
-const d=document.createElement("div");
-d.className="text-xs opacity-50 self-center";
-d.textContent=t;
-messageBox.appendChild(d);
+function pickImage(){
+  file.accept="image/*";
+  file.onchange=()=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      addImg(r.result,myName,"me");
+      conn.send({type:"img",data:r.result,user:myName});
+    };
+    r.readAsDataURL(file.files[0]);
+  };
+  file.click();
+}
+
+function addImg(src,user,type="them"){
+  const b=document.createElement("div");
+  b.className=`bubble ${type}`;
+  b.innerHTML=`<div class="user">${user}</div><img src="${src}">`;
+  messages.appendChild(b);
+  messages.scrollTop=messages.scrollHeight;
+}
+
+function recordVoice(){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{
+    mediaRecorder=new MediaRecorder(s);
+    chunks=[];
+    mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+    mediaRecorder.onstop=()=>{
+      const blob=new Blob(chunks,{type:"audio/ogg"});
+      const r=new FileReader();
+      r.onload=()=>{
+        addVoice(r.result,myName,"me");
+        conn.send({type:"voice",data:r.result,user:myName});
+      };
+      r.readAsDataURL(blob);
+    };
+    mediaRecorder.start();
+    setTimeout(()=>mediaRecorder.stop(),3000);
+  });
+}
+
+function addVoice(src,user,type="them"){
+  const b=document.createElement("div");
+  b.className=`bubble ${type}`;
+  b.innerHTML=`<div class="user">${user}</div><audio controls src="${src}"></audio>`;
+  messages.appendChild(b);
+  messages.scrollTop=messages.scrollHeight;
 }
 </script>
+
 </body>
 </html>

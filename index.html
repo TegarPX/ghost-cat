@@ -9,64 +9,33 @@
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-/* BASE */
-.smooth { transition: all 0.3s ease-in-out; }
-.mode-bright { background:#f1f5f9; color:#0f172a; }
-.card-bright { background:#ffffff; border:1px solid #e2e8f0; }
+.smooth{transition:.3s}
+.mode-bright{background:#f1f5f9;color:#0f172a}
+.card-bright{background:#fff;border:1px solid #e2e8f0}
+.mode-dark{background:#0f172a!important}
+.card-dark{background:#1e293b!important;border:1px solid #334155!important}
 
-.mode-dark { background:#0f172a !important; }
-.card-dark { background:#1e293b !important; border:1px solid #334155 !important; }
+.chat-bubble-me{background:#2563eb;color:#fff;border-radius:18px 18px 0 18px}
+.chat-bubble-them{background:#475569;color:#fff;border-radius:18px 18px 18px 0}
 
-/* CHAT */
-.chat-bubble-me {
-  background:#2563eb;
-  color:white;
-  border-radius:18px 18px 0 18px;
+#messageBox::-webkit-scrollbar{width:4px}
+#messageBox::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+
+.mode-dark p,.mode-dark span,.mode-dark h1,.mode-dark h2,.mode-dark label{color:#e5e7eb}
+
+.mode-dark input,.mode-dark textarea{
+background:#020617!important;
+color:#f8fafc!important;
+caret-color:#f8fafc;
 }
-.chat-bubble-them {
-  background:#475569;
-  color:white;
-  border-radius:18px 18px 18px 0;
-}
+.mode-dark input::placeholder{color:#64748b}
 
-/* SCROLL */
-#messageBox::-webkit-scrollbar { width:4px; }
-#messageBox::-webkit-scrollbar-thumb {
-  background:#cbd5e1;
-  border-radius:10px;
-}
-
-/* ===== DARK MODE TEXT SYSTEM ===== */
-.mode-dark p,
-.mode-dark span,
-.mode-dark h1,
-.mode-dark h2,
-.mode-dark h3,
-.mode-dark label {
-  color:#e5e7eb;
-}
-
-/* ===== INPUT FIX (INI YANG PENTING) ===== */
-.mode-dark input,
-.mode-dark textarea {
-  background:#020617 !important;
-  color:#f8fafc !important;   /* PUTIH */
-  caret-color:#f8fafc;        /* cursor putih */
-}
-
-/* PLACEHOLDER */
-.mode-dark input::placeholder,
-.mode-dark textarea::placeholder {
-  color:#64748b;
-}
-
-/* SYSTEM MESSAGE */
-.system-text {
-  font-size:10px;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:.2em;
-  opacity:.6;
+.system-text{
+font-size:10px;
+font-weight:900;
+text-transform:uppercase;
+letter-spacing:.2em;
+opacity:.6
 }
 </style>
 </head>
@@ -74,50 +43,35 @@
 <body id="mainBody"
 class="mode-bright smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans">
 
-<!-- THEME BUTTON -->
+<!-- THEME -->
 <div class="fixed top-5 right-5 z-50">
 <button id="themeBtn" onclick="toggleTheme()"
-class="p-3 rounded-2xl bg-white shadow-lg border border-slate-200 flex items-center gap-2 smooth text-slate-800">
+class="p-3 rounded-2xl bg-white shadow-lg border flex gap-2">
 <span id="themeIcon">🌙</span>
-<span id="themeText" class="text-xs font-bold uppercase tracking-wider">Dark</span>
+<span id="themeText" class="text-xs font-bold uppercase">Dark</span>
 </button>
 </div>
 
 <!-- SETUP -->
 <div id="setupCard"
-class="card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md smooth">
+class="card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md">
 
 <div class="text-center mb-8">
-<h1 class="text-3xl font-black tracking-tighter text-blue-600">
+<h1 class="text-3xl font-black text-blue-600">
 GHOST<span class="text-slate-400">CHAT</span>
 </h1>
-<p class="text-xs font-medium opacity-50 mt-1 uppercase tracking-widest">
-No Database • No Logs • RAM Only
-</p>
+<p class="text-xs opacity-50 uppercase">No Database • No Logs • RAM Only</p>
 </div>
 
 <div class="space-y-5">
-<div>
-<label class="text-[10px] font-black uppercase opacity-60 ml-2">
-Room Alfabet (A-Z)
-</label>
 <input id="roomLetter" maxlength="1" placeholder="A"
-class="w-full p-4 mt-1 rounded-2xl border-2 border-slate-100 bg-slate-50
-text-center text-2xl font-bold focus:border-blue-500 outline-none smooth">
-</div>
+class="w-full p-4 rounded-2xl text-center text-2xl font-bold border">
 
-<div>
-<label class="text-[10px] font-black uppercase opacity-60 ml-2">
-Room Angka (1000-9999)
-</label>
 <input id="roomNumber" type="number" min="1000" max="9999" placeholder="1000"
-class="w-full p-4 mt-1 rounded-2xl border-2 border-slate-100 bg-slate-50
-text-center text-2xl font-bold focus:border-blue-500 outline-none smooth">
-</div>
+class="w-full p-4 rounded-2xl text-center text-2xl font-bold border">
 
-<button id="btnJoin" onclick="initP2P()"
-class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5
-rounded-2xl shadow-xl uppercase tracking-wider">
+<button onclick="initP2P()"
+class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl">
 Mulai Chatting
 </button>
 </div>
@@ -126,34 +80,31 @@ Mulai Chatting
 <!-- CHAT -->
 <div id="chatInterface"
 class="hidden w-full max-w-lg h-[90vh] card-bright rounded-[2.5rem]
-shadow-2xl flex flex-col overflow-hidden smooth">
+shadow-2xl flex flex-col overflow-hidden">
 
-<div class="p-6 bg-blue-600 text-white flex justify-between items-center">
+<div class="p-6 bg-blue-600 text-white flex justify-between">
 <div>
-<p class="text-[10px] uppercase font-bold opacity-70">Privat Room</p>
-<h2 id="activeRoomName" class="font-black text-xl tracking-tight">A-1000</h2>
+<p class="text-[10px] uppercase opacity-70">Privat Room</p>
+<h2 id="activeRoomName" class="font-black text-xl">A-1000</h2>
 </div>
 <button onclick="location.reload()"
-class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-xs font-bold">
+class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold">
 Keluar
 </button>
 </div>
 
 <div id="messageBox"
-class="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col">
-<div class="self-center bg-slate-100 px-4 py-1 rounded-full
-text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-Menunggu teman...
+class="flex-1 p-6 overflow-y-auto flex flex-col gap-4">
+<div class="self-center bg-slate-100 px-4 py-1 rounded-full text-[10px]">
+Menunggu partner...
 </div>
 </div>
 
 <div class="p-4 border-t flex gap-2">
 <input id="messageInput" placeholder="Ketik pesan rahasia..."
-class="flex-1 p-4 rounded-2xl bg-white shadow-inner outline-none">
+class="flex-1 p-4 rounded-2xl outline-none">
 <button onclick="sendPrivateMessage()"
-class="bg-blue-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center">
-➤
-</button>
+class="bg-blue-600 text-white w-14 h-14 rounded-2xl">➤</button>
 </div>
 </div>
 
@@ -162,47 +113,57 @@ let peer, conn, isDark=false;
 
 /* THEME */
 function toggleTheme(){
-const body=mainBody, setup=setupCard, chat=chatInterface;
 isDark=!isDark;
-if(isDark){
-body.className="mode-dark smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans";
-setup.className="card-dark p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md smooth";
-chat.classList.add("card-dark");
-themeIcon.textContent="☀️";
-themeText.textContent="Bright";
-themeBtn.classList.add("bg-slate-800","text-white");
-}else{
-body.className="mode-bright smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans";
-setup.className="card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md smooth";
-chat.classList.remove("card-dark");
-themeIcon.textContent="🌙";
-themeText.textContent="Dark";
-themeBtn.classList.remove("bg-slate-800","text-white");
-}
+mainBody.className=isDark
+?"mode-dark smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans"
+:"mode-bright smooth min-h-screen flex flex-col items-center justify-center p-4 font-sans";
+setupCard.className=isDark
+?"card-dark p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md"
+:"card-bright p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md";
+chatInterface.classList.toggle("card-dark",isDark);
+themeIcon.textContent=isDark?"☀️":"🌙";
+themeText.textContent=isDark?"Bright":"Dark";
 }
 
-/* P2P */
+/* ===== P2P FIX TOTAL ===== */
 function initP2P(){
-const l=roomLetter.value.toUpperCase(), n=roomNumber.value;
-if(!l||!n) return alert("Pilih room dulu!");
-btnJoin.textContent="Menghubungkan...";
+const l=roomLetter.value.toUpperCase();
+const n=roomNumber.value;
+if(!l||!n) return alert("Isi room dulu!");
 
-peer=new Peer();
+const roomId=`ghost-${l}-${n}`;
+
+peer=new Peer(roomId);
+
 peer.on("open",()=>{
 showChat(l,n);
-conn=peer.connect(`ghost-room-${l}-${n}`);
-setupConn();
+appendMessage("Menunggu partner...","system");
 });
+
 peer.on("connection",c=>{
 conn=c;
 setupConn();
 });
+
+peer.on("error",err=>{
+if(err.type==="unavailable-id"){
+peer=new Peer();
+peer.on("open",()=>{
+conn=peer.connect(roomId);
+setupConn();
+showChat(l,n);
+});
+}
+});
 }
 
 function setupConn(){
-if(!conn) return;
-conn.on("open",()=>appendMessage("Terhubung secara privat.","system"));
-conn.on("data",m=>appendMessage(m,"them"));
+conn.on("open",()=>{
+appendMessage("Terhubung secara privat.","system");
+});
+conn.on("data",m=>{
+appendMessage(m,"them");
+});
 }
 
 function showChat(l,n){
@@ -212,7 +173,7 @@ activeRoomName.textContent=`${l}-${n}`;
 }
 
 function sendPrivateMessage(){
-if(!conn||!conn.open) return alert("Belum terhubung");
+if(!conn||!conn.open) return;
 const msg=messageInput.value.trim();
 if(!msg) return;
 conn.send(msg);
@@ -222,9 +183,11 @@ messageInput.value="";
 
 function appendMessage(text,type){
 const d=document.createElement("div");
-if(type==="me") d.className="self-end chat-bubble-me p-4 max-w-[85%]";
-else if(type==="them") d.className="self-start chat-bubble-them p-4 max-w-[85%]";
-else d.className="self-center system-text";
+d.className=type==="me"
+?"self-end chat-bubble-me p-4 max-w-[85%]"
+:type==="them"
+?"self-start chat-bubble-them p-4 max-w-[85%]"
+:"self-center system-text";
 d.textContent=text;
 messageBox.appendChild(d);
 messageBox.scrollTop=messageBox.scrollHeight;

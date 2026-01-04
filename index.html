@@ -9,113 +9,73 @@
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-html,body{
-  height:100%;
-  background:#0f172a;
-  color:#e5e7eb;
-}
-.chat-me{
-  background:#2563eb;
-  border-radius:16px 16px 4px 16px;
-  word-break:break-word;
-}
-.chat-them{
-  background:#334155;
-  border-radius:16px 16px 16px 4px;
-  word-break:break-word;
-}
-.file-btn{
-  width:48px;
-  height:48px;
-  border-radius:9999px;
-  border:2px solid #475569;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.file-link{
-  color:#93c5fd;
-  text-decoration:underline;
-}
+html,body{height:100%;background:#0f172a;color:#e5e7eb}
+.chat-me{background:#2563eb;border-radius:16px 16px 4px 16px;word-break:break-word}
+.chat-them{background:#334155;border-radius:16px 16px 16px 4px;word-break:break-word}
+.file-btn{width:48px;height:48px;border-radius:9999px;border:2px solid #475569;display:flex;align-items:center;justify-content:center}
+.file-link{color:#93c5fd;text-decoration:underline}
 </style>
 </head>
 
 <body class="h-full flex flex-col">
 
-<!-- SEARCHING POPUP -->
+<!-- SEARCH -->
 <div id="searchPopup" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-slate-900 p-6 rounded-2xl text-center w-64">
     <div class="text-lg font-bold">Searching server</div>
     <div id="counter" class="text-4xl font-black mt-2">5</div>
-    <div class="text-xs opacity-60 mt-1">please wait...</div>
   </div>
 </div>
 
 <!-- MENU -->
 <div id="menu" class="flex-1 flex items-center justify-center p-4">
-  <div class="w-full max-w-md bg-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+  <div class="w-full max-w-md bg-slate-800 p-6 rounded-3xl space-y-4">
     <h1 class="text-center text-3xl font-black">PesanKu.id</h1>
-
-    <input id="username" placeholder="Username"
-      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
-
-    <input id="roomLetter" maxlength="1" placeholder="Room A-Z"
-      class="w-full p-4 rounded-xl bg-slate-900 uppercase outline-none">
-
-    <input id="roomPort" type="number" placeholder="Port 1000-9999"
-      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
-
-    <button id="joinBtn"
-      class="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold">
-      JOIN
-    </button>
+    <input id="username" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900">
+    <input id="roomLetter" maxlength="1" placeholder="Room A-Z" class="w-full p-4 rounded-xl bg-slate-900 uppercase">
+    <input id="roomPort" type="number" placeholder="Port 1000-9999" class="w-full p-4 rounded-xl bg-slate-900">
+    <button id="joinBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">JOIN</button>
   </div>
 </div>
 
 <!-- CHAT -->
 <div id="chat" class="hidden flex-1 flex flex-col">
 
-<!-- TOP BAR -->
 <div class="h-14 bg-slate-900 px-4 flex items-center justify-between">
   <div>
     <div id="roomInfo" class="font-bold"></div>
     <div id="connInfo" class="text-xs opacity-70">connecting...</div>
   </div>
-  <button onclick="location.reload()" class="text-sm opacity-80">Keluar</button>
+  <button onclick="location.reload()">Keluar</button>
 </div>
 
-<!-- MESSAGES -->
-<div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+<div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col"></div>
 
-<!-- INPUT BAR -->
 <div class="p-3 bg-slate-900 flex items-center gap-2">
   <input type="file" id="fileInput" hidden>
-
   <button id="fileBtn" class="file-btn">📎</button>
-
-  <input id="msg" placeholder="Message"
-    class="flex-1 p-3 rounded-xl bg-slate-800 outline-none">
-
-  <button id="sendBtn"
-    class="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
-    ➤
-  </button>
+  <input id="msg" class="flex-1 p-3 rounded-xl bg-slate-800" placeholder="Message">
+  <button id="sendBtn" class="bg-blue-600 w-12 h-12 rounded-full">➤</button>
 </div>
 </div>
 
 <script>
-/* ========= GLOBAL ========= */
-let peer, conn, username;
-let timer;
-
-/* ========= DOM ========= */
+/* ===== DOM ===== */
 const joinBtn = document.getElementById("joinBtn");
-const searchPopup = document.getElementById("searchPopup");
-const counter = document.getElementById("counter");
+const sendBtn = document.getElementById("sendBtn");
+const msgInput = document.getElementById("msg");
+const messages = document.getElementById("messages");
 const fileBtn = document.getElementById("fileBtn");
 const fileInput = document.getElementById("fileInput");
+const searchPopup = document.getElementById("searchPopup");
+const counter = document.getElementById("counter");
+const connInfo = document.getElementById("connInfo");
+const roomInfo = document.getElementById("roomInfo");
 
-/* ========= SEARCH POPUP ========= */
+/* ===== STATE ===== */
+let peer, conn, username, timer;
+
+/* ===== SEARCH ===== */
 function showSearch(){
   searchPopup.classList.remove("hidden");
   let t = 5;
@@ -123,40 +83,28 @@ function showSearch(){
   timer = setInterval(()=>{
     t--;
     counter.textContent = t;
-    if(t <= 0) hideSearch();
+    if(t<=0){clearInterval(timer);searchPopup.classList.add("hidden");}
   },1000);
 }
-function hideSearch(){
-  clearInterval(timer);
-  searchPopup.classList.add("hidden");
-}
 
-/* ========= JOIN ========= */
+/* ===== JOIN ===== */
 joinBtn.onclick = ()=>{
-  username = document.getElementById("username").value.trim();
+  username = usernameInput.value.trim();
   const l = roomLetter.value.toUpperCase();
   const p = roomPort.value;
-  if(!username || !l || !p) return alert("Lengkapi data");
+  if(!username||!l||!p) return alert("Lengkapi data");
 
   showSearch();
   const roomId = `pesanku-${l}-${p}`;
-
   peer = new Peer(roomId);
 
-  peer.on("open", ()=>{
-    openChat(l,p);
-  });
-
-  peer.on("connection", c=>{
-    conn = c;
-    setupConn();
-  });
-
-  peer.on("error", e=>{
-    if(e.type === "unavailable-id"){
-      peer = new Peer();
-      peer.on("open", ()=>{
-        conn = peer.connect(roomId);
+  peer.on("open",()=>openChat(l,p));
+  peer.on("connection",c=>{conn=c;setupConn();});
+  peer.on("error",e=>{
+    if(e.type==="unavailable-id"){
+      peer=new Peer();
+      peer.on("open",()=>{
+        conn=peer.connect(roomId);
         setupConn();
         openChat(l,p);
       });
@@ -164,76 +112,59 @@ joinBtn.onclick = ()=>{
   });
 };
 
-/* ========= CONNECTION ========= */
 function setupConn(){
-  conn.on("open", ()=>{
-    hideSearch();
-    connInfo.textContent = "connected";
-    systemMsg("Terhubung");
-  });
-
-  conn.on("data", d=>{
-    if(d.type === "text") addMsg(d.user, d.msg, false);
-    if(d.type === "file") recvFile(d);
+  conn.on("open",()=>connInfo.textContent="connected");
+  conn.on("data",d=>{
+    if(d.type==="text") addMsg(d.user,d.msg,false);
+    if(d.type==="file") recvFile(d);
   });
 }
 
-/* ========= UI ========= */
+/* ===== UI ===== */
 function openChat(l,p){
   menu.classList.add("hidden");
   chat.classList.remove("hidden");
-  roomInfo.textContent = `Room ${l}-${p}`;
-}
-function systemMsg(t){
-  const d = document.createElement("div");
-  d.className = "text-center text-xs opacity-60";
-  d.textContent = t;
-  messages.appendChild(d);
+  roomInfo.textContent=`Room ${l}-${p}`;
 }
 
-/* ========= TEXT ========= */
-sendBtn.onclick = ()=>{
-  if(!conn || !conn.open) return;
-  const t = msg.value.trim();
+/* ===== CHAT ===== */
+sendBtn.onclick = sendMessage;
+msgInput.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage();});
+
+function sendMessage(){
+  if(!conn||!conn.open) return;
+  const t = msgInput.value.trim();
   if(!t) return;
-  conn.send({type:"text", user:username, msg:t});
-  addMsg("You", t, true);
-  msg.value = "";
-};
+  conn.send({type:"text",user:username,msg:t});
+  addMsg("You",t,true);
+  msgInput.value="";
+}
 
 function addMsg(user,text,me){
-  const w = document.createElement("div");
-  w.className = `max-w-[80%] ${me?"self-end":"self-start"}`;
-  w.innerHTML = `
-    <div class="text-xs opacity-70 mb-1">${user}</div>
-    <div class="${me?"chat-me":"chat-them"} p-3">${text}</div>
-  `;
-  messages.appendChild(w);
-  messages.scrollTop = messages.scrollHeight;
+  const d=document.createElement("div");
+  d.className=`max-w-[80%] ${me?"self-end":"self-start"}`;
+  d.innerHTML=`<div class="text-xs opacity-70">${user}</div>
+  <div class="${me?"chat-me":"chat-them"} p-3">${text}</div>`;
+  messages.appendChild(d);
+  messages.scrollTop=messages.scrollHeight;
 }
 
-/* ========= FILE ========= */
-fileBtn.onclick = ()=> fileInput.click();
-
-fileInput.onchange = ()=>{
-  const f = fileInput.files[0];
-  if(!f || !conn) return;
-  const r = new FileReader();
-  r.onload = ()=>{
-    conn.send({type:"file", user:username, name:f.name, data:r.result});
-  };
+/* ===== FILE ===== */
+fileBtn.onclick=()=>fileInput.click();
+fileInput.onchange=()=>{
+  const f=fileInput.files[0];
+  if(!f||!conn) return;
+  const r=new FileReader();
+  r.onload=()=>conn.send({type:"file",user:username,name:f.name,data:r.result});
   r.readAsDataURL(f);
 };
-
 function recvFile(d){
-  const a = document.createElement("a");
-  a.href = d.data;
-  a.download = d.name;
-  a.textContent = `📎 ${d.name}`;
-  a.className = "file-link block";
+  const a=document.createElement("a");
+  a.href=d.data;a.download=d.name;
+  a.textContent=`📎 ${d.name}`;
+  a.className="file-link";
   messages.appendChild(a);
 }
 </script>
-
 </body>
 </html>

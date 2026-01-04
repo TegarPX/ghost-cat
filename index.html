@@ -14,6 +14,7 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
 .chat-them{background:#334155;border-radius:16px 16px 16px 4px;word-break:break-word}
 .file-btn{width:48px;height:48px;border-radius:9999px;border:2px solid #475569;display:flex;align-items:center;justify-content:center}
 .file-link{color:#93c5fd;text-decoration:underline}
+select{appearance:none}
 </style>
 </head>
 
@@ -31,10 +32,26 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
 <div id="menu" class="flex-1 flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-slate-800 p-6 rounded-3xl space-y-4">
     <h1 class="text-center text-3xl font-black">PesanKu.id</h1>
-    <input id="username" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900">
-    <input id="roomLetter" maxlength="1" placeholder="Room A-Z" class="w-full p-4 rounded-xl bg-slate-900 uppercase">
-    <input id="roomPort" type="number" placeholder="Port 1000-9999" class="w-full p-4 rounded-xl bg-slate-900">
-    <button id="joinBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">JOIN</button>
+
+    <input id="username" placeholder="Username"
+      class="w-full p-4 rounded-xl bg-slate-900">
+
+    <!-- SELECT A-Z -->
+    <div class="relative">
+      <select id="roomLetter"
+        class="w-full p-4 rounded-xl bg-slate-900 font-bold uppercase">
+        <option value="">Pilih Server A–Z</option>
+      </select>
+      <span class="absolute right-4 top-1/2 -translate-y-1/2 opacity-60">▼</span>
+    </div>
+
+    <input id="roomPort" type="number" placeholder="Port 1000-9999"
+      class="w-full p-4 rounded-xl bg-slate-900">
+
+    <button id="joinBtn"
+      class="w-full bg-blue-600 p-4 rounded-xl font-bold">
+      JOIN
+    </button>
   </div>
 </div>
 
@@ -49,54 +66,66 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
   <button onclick="location.reload()">Keluar</button>
 </div>
 
-<div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col"></div>
+<div id="messages"
+  class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col"></div>
 
 <div class="p-3 bg-slate-900 flex items-center gap-2">
   <input type="file" id="fileInput" hidden>
   <button id="fileBtn" class="file-btn">📎</button>
-  <input id="msg" class="flex-1 p-3 rounded-xl bg-slate-800" placeholder="Message">
-  <button id="sendBtn" class="bg-blue-600 w-12 h-12 rounded-full">➤</button>
+  <input id="msg"
+    class="flex-1 p-3 rounded-xl bg-slate-800"
+    placeholder="Message">
+  <button id="sendBtn"
+    class="bg-blue-600 w-12 h-12 rounded-full">➤</button>
 </div>
 </div>
 
 <script>
 /* ===== DOM ===== */
-const joinBtn = document.getElementById("joinBtn");
-const sendBtn = document.getElementById("sendBtn");
-const msgInput = document.getElementById("msg");
-const messages = document.getElementById("messages");
-const fileBtn = document.getElementById("fileBtn");
-const fileInput = document.getElementById("fileInput");
-const searchPopup = document.getElementById("searchPopup");
-const counter = document.getElementById("counter");
-const connInfo = document.getElementById("connInfo");
-const roomInfo = document.getElementById("roomInfo");
+const joinBtn=document.getElementById("joinBtn");
+const sendBtn=document.getElementById("sendBtn");
+const msgInput=document.getElementById("msg");
+const messages=document.getElementById("messages");
+const fileBtn=document.getElementById("fileBtn");
+const fileInput=document.getElementById("fileInput");
+const searchPopup=document.getElementById("searchPopup");
+const counter=document.getElementById("counter");
+const connInfo=document.getElementById("connInfo");
+const roomInfo=document.getElementById("roomInfo");
+const roomLetter=document.getElementById("roomLetter");
+const usernameInput=document.getElementById("username");
+
+/* ===== FILL A-Z ===== */
+for(let i=65;i<=90;i++){
+  const o=document.createElement("option");
+  o.value=String.fromCharCode(i);
+  o.textContent=`Server ${o.value}`;
+  roomLetter.appendChild(o);
+}
 
 /* ===== STATE ===== */
-let peer, conn, username, timer;
+let peer,conn,username;
 
 /* ===== SEARCH ===== */
 function showSearch(){
   searchPopup.classList.remove("hidden");
-  let t = 5;
-  counter.textContent = t;
-  timer = setInterval(()=>{
-    t--;
-    counter.textContent = t;
-    if(t<=0){clearInterval(timer);searchPopup.classList.add("hidden");}
+  let t=5;counter.textContent=t;
+  const i=setInterval(()=>{
+    t--;counter.textContent=t;
+    if(t<=0){clearInterval(i);searchPopup.classList.add("hidden");}
   },1000);
 }
 
 /* ===== JOIN ===== */
-joinBtn.onclick = ()=>{
-  username = usernameInput.value.trim();
-  const l = roomLetter.value.toUpperCase();
-  const p = roomPort.value;
+joinBtn.onclick=()=>{
+  username=usernameInput.value.trim();
+  const l=roomLetter.value;
+  const p=roomPort.value;
   if(!username||!l||!p) return alert("Lengkapi data");
 
   showSearch();
-  const roomId = `pesanku-${l}-${p}`;
-  peer = new Peer(roomId);
+  const roomId=`pesanku-${l}-${p}`;
+  peer=new Peer(roomId);
 
   peer.on("open",()=>openChat(l,p));
   peer.on("connection",c=>{conn=c;setupConn();});
@@ -105,8 +134,7 @@ joinBtn.onclick = ()=>{
       peer=new Peer();
       peer.on("open",()=>{
         conn=peer.connect(roomId);
-        setupConn();
-        openChat(l,p);
+        setupConn();openChat(l,p);
       });
     }
   });
@@ -128,12 +156,12 @@ function openChat(l,p){
 }
 
 /* ===== CHAT ===== */
-sendBtn.onclick = sendMessage;
+sendBtn.onclick=sendMessage;
 msgInput.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage();});
 
 function sendMessage(){
   if(!conn||!conn.open) return;
-  const t = msgInput.value.trim();
+  const t=msgInput.value.trim();
   if(!t) return;
   conn.send({type:"text",user:username,msg:t});
   addMsg("You",t,true);

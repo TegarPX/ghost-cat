@@ -14,14 +14,14 @@ html,body{height:100%;background:#0f172a;color:#e5e7eb}
 .chat-them{background:#334155;border-radius:16px 16px 16px 4px}
 .voice-btn{background:#1e293b}
 .voice-rec{background:#dc2626}
+.file-link{color:#93c5fd;text-decoration:underline}
 </style>
 </head>
 
 <body class="h-full flex flex-col">
 
-<!-- SEARCHING POPUP -->
-<div id="searchPopup"
-class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+<!-- SEARCH POPUP -->
+<div id="searchPopup" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="bg-slate-900 p-6 rounded-2xl text-center w-64">
     <div class="text-lg font-bold">Searching server</div>
     <div id="counter" class="text-4xl font-black mt-2">5</div>
@@ -34,19 +34,11 @@ class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <div class="w-full max-w-md bg-slate-800 p-6 rounded-3xl space-y-4">
     <h1 class="text-center text-3xl font-black">PesanKu.id</h1>
 
-    <input id="username" placeholder="Username"
-      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
+    <input id="username" placeholder="Username" class="w-full p-4 rounded-xl bg-slate-900">
+    <input id="roomLetter" maxlength="1" placeholder="Room A-Z" class="w-full p-4 rounded-xl bg-slate-900 uppercase">
+    <input id="roomPort" type="number" placeholder="Port 1000-9999" class="w-full p-4 rounded-xl bg-slate-900">
 
-    <input id="roomLetter" maxlength="1" placeholder="Room A-Z"
-      class="w-full p-4 rounded-xl bg-slate-900 uppercase outline-none">
-
-    <input id="roomPort" type="number" placeholder="Port 1000-9999"
-      class="w-full p-4 rounded-xl bg-slate-900 outline-none">
-
-    <button id="joinBtn"
-      class="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold">
-      JOIN
-    </button>
+    <button id="joinBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">JOIN</button>
   </div>
 </div>
 
@@ -67,31 +59,27 @@ class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
   <input type="file" id="fileInput" hidden>
   <button id="fileBtn">📎</button>
 
-  <button id="micBtn"
-    class="voice-btn w-12 h-12 rounded-full flex items-center justify-center">
-    🎤
-  </button>
+  <button id="micBtn" class="voice-btn w-12 h-12 rounded-full flex items-center justify-center">🎤</button>
 
-  <input id="msg" placeholder="Message"
-    class="flex-1 p-3 rounded-xl bg-slate-800 outline-none">
-
+  <input id="msg" placeholder="Message" class="flex-1 p-3 rounded-xl bg-slate-800 outline-none">
   <button id="sendBtn">➤</button>
 </div>
 </div>
 
 <script>
-/* ========= GLOBAL ========= */
 let peer,conn,username;
 let recorder,stream,chunks=[];
 let timer;
 
-/* ========= DOM ========= */
+/* DOM */
 const joinBtn=document.getElementById("joinBtn");
 const searchPopup=document.getElementById("searchPopup");
 const counter=document.getElementById("counter");
 const micBtn=document.getElementById("micBtn");
+const fileBtn=document.getElementById("fileBtn");
+const fileInput=document.getElementById("fileInput");
 
-/* ========= SEARCH POPUP ========= */
+/* SEARCH POPUP */
 function showSearch(){
   searchPopup.classList.remove("hidden");
   let t=5;
@@ -107,7 +95,7 @@ function hideSearch(){
   searchPopup.classList.add("hidden");
 }
 
-/* ========= JOIN ========= */
+/* JOIN */
 joinBtn.onclick=()=>{
   username=document.getElementById("username").value.trim();
   const l=roomLetter.value.toUpperCase();
@@ -118,16 +106,8 @@ joinBtn.onclick=()=>{
   const roomId=`pesanku-${l}-${p}`;
 
   peer=new Peer(roomId);
-
-  peer.on("open",()=>{
-    openChat(l,p);
-  });
-
-  peer.on("connection",c=>{
-    conn=c;
-    setupConn();
-  });
-
+  peer.on("open",()=>openChat(l,p));
+  peer.on("connection",c=>{conn=c;setupConn();});
   peer.on("error",e=>{
     if(e.type==="unavailable-id"){
       peer=new Peer();
@@ -140,7 +120,7 @@ joinBtn.onclick=()=>{
   });
 };
 
-/* ========= CONNECTION ========= */
+/* CONNECTION */
 function setupConn(){
   conn.on("open",()=>{
     hideSearch();
@@ -149,11 +129,12 @@ function setupConn(){
   });
   conn.on("data",d=>{
     if(d.type==="text") addMsg(d.user,d.msg,false);
+    if(d.type==="file") recvFile(d);
     if(d.type==="audio") recvAudio(d);
   });
 }
 
-/* ========= UI ========= */
+/* UI */
 function openChat(l,p){
   menu.classList.add("hidden");
   chat.classList.remove("hidden");
@@ -166,7 +147,7 @@ function systemMsg(t){
   messages.appendChild(d);
 }
 
-/* ========= TEXT ========= */
+/* TEXT */
 sendBtn.onclick=()=>{
   if(!conn||!conn.open) return;
   const t=msg.value.trim();
@@ -179,13 +160,33 @@ function addMsg(user,text,me){
   const w=document.createElement("div");
   w.className=`max-w-[80%] ${me?"self-end":"self-start"}`;
   w.innerHTML=`
-  <div class="text-xs opacity-70 mb-1">${user}</div>
-  <div class="${me?"chat-me":"chat-them"} p-3">${text}</div>`;
+    <div class="text-xs opacity-70 mb-1">${user}</div>
+    <div class="${me?"chat-me":"chat-them"} p-3">${text}</div>`;
   messages.appendChild(w);
   messages.scrollTop=messages.scrollHeight;
 }
 
-/* ========= VOICE (HOLD) ========= */
+/* FILE */
+fileBtn.onclick=()=>fileInput.click();
+fileInput.onchange=()=>{
+  const f=fileInput.files[0];
+  if(!f||!conn) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    conn.send({type:"file",user:username,name:f.name,data:r.result});
+  };
+  r.readAsDataURL(f);
+};
+function recvFile(d){
+  const a=document.createElement("a");
+  a.href=d.data;
+  a.download=d.name;
+  a.textContent=`📎 ${d.name}`;
+  a.className="file-link block";
+  messages.appendChild(a);
+}
+
+/* VOICE HOLD */
 micBtn.onmousedown=startRec;
 micBtn.onmouseup=stopRec;
 micBtn.ontouchstart=startRec;
@@ -205,17 +206,21 @@ function stopRec(){
   recorder.onstop=()=>{
     const blob=new Blob(chunks,{type:"audio/webm"});
     const r=new FileReader();
-    r.onload=()=>conn.send({type:"audio",user:username,data:r.result});
+    r.onload=()=>{
+      conn.send({type:"audio",user:username,data:r.result});
+    };
     r.readAsDataURL(blob);
   };
   recorder.stop();
 }
 function recvAudio(d){
-  const b=document.createElement("button");
-  b.textContent="▶ Voice message";
-  const a=new Audio(d.data);
-  b.onclick=()=>a.play();
-  messages.appendChild(b);
+  const btn=document.createElement("button");
+  btn.textContent="▶ Voice message";
+  btn.className="text-left underline text-blue-400";
+  const audio=new Audio(d.data);
+  audio.preload="auto";
+  btn.onclick=()=>audio.play();
+  messages.appendChild(btn);
 }
 </script>
 </body>
